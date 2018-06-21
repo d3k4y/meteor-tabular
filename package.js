@@ -1,10 +1,10 @@
 /* global Package, Npm */
 
 Package.describe({
-  name: 'aldeed:tabular',
+  name: 'd3k4y:tabular',
   summary: 'Datatables for large or small datasets in Meteor',
-  version: '2.1.1',
-  git: 'https://github.com/aldeed/meteor-tabular.git'
+  version: '2.2.2',
+  git: 'https://github.com/d3k4y/meteor-tabular.git'
 });
 
 Npm.depends({
@@ -49,7 +49,7 @@ Package.onUse(function(api) {
 
 Package.onTest(function(api) {
   // Tiny Test
-  api.use(['aldeed:tabular', 'tinytest']);
+  api.use(['d3k4y:tabular', 'tinytest']);
   api.use([
     'anti:fake',
     'check',

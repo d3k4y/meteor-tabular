@@ -162,15 +162,15 @@ Meteor.publish('tabular_getInfo', function (tableName, selector, sort, skip, lim
   const handle = filteredCursor.observeChanges({
     added: function (id) {
       if (initializing) return;
-
       //console.log('ADDED');
       filteredRecordIds.push(id);
       updateRecords();
     },
     removed: function (id) {
       //console.log('REMOVED');
-      // _.findWhere is used to support Mongo ObjectIDs
-      filteredRecordIds = _.without(filteredRecordIds, _.findWhere(filteredRecordIds, id));
+      const approach1 = _.without(filteredRecordIds, id); // default approach, may fail if Mongo ObjectIDs are used
+      const approach2 = _.without(filteredRecordIds, _.findWhere(filteredRecordIds, id)); // _.findWhere is used to support Mongo ObjectIDs
+      filteredRecordIds = approach1.length < approach2.length ? approach1 : approach2;
       updateRecords();
     }
   });
