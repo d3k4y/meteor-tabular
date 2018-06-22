@@ -3,7 +3,7 @@
 Package.describe({
   name: 'd3k4y:tabular',
   summary: 'Datatables for large or small datasets in Meteor',
-  version: '2.2.2',
+  version: '2.2.3',
   git: 'https://github.com/d3k4y/meteor-tabular.git'
 });
 

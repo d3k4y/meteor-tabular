@@ -166,6 +166,10 @@ Meteor.publish('tabular_getInfo', function (tableName, selector, sort, skip, lim
       filteredRecordIds.push(id);
       updateRecords();
     },
+    changed: function (id) {
+      if (initializing) return;
+      updateRecords();
+    },
     removed: function (id) {
       //console.log('REMOVED');
       const approach1 = _.without(filteredRecordIds, id); // default approach, may fail if Mongo ObjectIDs are used
