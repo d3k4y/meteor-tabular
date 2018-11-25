@@ -353,12 +353,15 @@ Add an ID parameter to the template include. This is used in localstorage by dat
 
 ## Security
 
-You can optionally provide an `allow` and/or `allowFields` function to control which clients can get the published data. These are used by the built-in publications on the server only.
+You can optionally provide an `allow`, `allowDoc` and/or `allowFields` function to control which clients can get the published data. These are used by the built-in publications on the server only.
 
 ```js
 TabularTables.Books = new Tabular.Table({
   // other properties...
   allow(userId) {
+    return false; // don't allow this person to subscribe to the data
+  },
+  allowDoc(userId) {
     return false; // don't allow this person to subscribe to the data
   },
   allowFields(userId, fields) {

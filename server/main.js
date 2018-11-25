@@ -1,6 +1,6 @@
-import { Meteor } from 'meteor/meteor';
-import { check, Match } from 'meteor/check';
-import { _ } from 'meteor/underscore';
+import {Meteor} from 'meteor/meteor';
+import {check, Match} from 'meteor/check';
+import {_} from 'meteor/underscore';
 import Tabular from '../common/Tabular';
 
 /*
@@ -32,10 +32,26 @@ Meteor.publish('tabular_genericPub', function (tableName, ids, fields) {
     return;
   }
 
-  // Check security. We call this in both publications.
+  // Check security of user and collection. We call this in both publications.
   if (typeof table.allow === 'function' && !table.allow(this.userId, fields)) {
-    this.ready();
-    return;
+      this.ready();
+      return;
+  }
+
+  if (typeof table.allowDoc === 'function') {
+    // Check security of the *individual* document and the user.
+    let isAllowedDoc = true;
+    ids.forEach(function(itemId) {
+      // the 3rd parameter 'fields' table.allow(this.userId, itemId, fields) is empty, and also undocumented. Maybe just wrong?
+      if (!table.allowDoc(this.userId, itemId, fields)) {
+          isAllowedDoc = false;
+        return;
+      }
+    });
+    if (!isAllowedDoc) {
+      this.ready();
+      return;
+    }
   }
 
   // Check security for fields. We call this only in this publication

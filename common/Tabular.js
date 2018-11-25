@@ -1,5 +1,5 @@
-import { Meteor } from 'meteor/meteor';
-import { Mongo } from 'meteor/mongo';
+import {Meteor} from 'meteor/meteor';
+import {Mongo} from 'meteor/mongo';
 
 const Tabular = {};
 
@@ -27,6 +27,7 @@ Tabular.Table = class {
 
     this.onUnload = options.onUnload;
     this.allow = options.allow;
+    this.allowDoc = options.allowDoc;
     this.allowFields = options.allowFields;
     this.changeSelector = options.changeSelector;
     this.throttleRefresh = options.throttleRefresh;
@@ -50,6 +51,7 @@ Tabular.Table = class {
       'sub',
       'onUnload',
       'allow',
+      'allowDoc',
       'allowFields',
       'changeSelector',
       'throttleRefresh',
