@@ -4,7 +4,7 @@ Package.describe({
   name: 'sebl29:tabular',
   summary: 'Datatables for large or small datasets in Meteor',
   version: '2.2.4',
-  git: 'https://github.com/d3k4y/meteor-tabular.git'
+  git: 'https://github.com/Sebl29/meteor-tabular.git'
 });
 
 Npm.depends({
@@ -14,12 +14,11 @@ Npm.depends({
 Package.onUse(function(api) {
   api.versionsFrom(['1.8']);
   api.use([
+    'blaze-html-templates@1.1.2',
     'check',
     'ecmascript',
     'underscore',
     'mongo',
-    'blaze',
-    'templating',
     'reactive-var',
     'tracker',
     'session'
@@ -28,7 +27,7 @@ Package.onUse(function(api) {
   // jquery is a weak reference in case you want to use a different package or
   // pull it in another way, but regardless you need to make sure it is loaded
   // before any tabular tables are rendered
-  api.use(['jquery'], 'client', {weak: true});
+  api.use(['jquery@1.11.11'], 'client', {weak: true});
 
   api.use(['meteorhacks:subs-manager@1.2.0'], ['client', 'server'], {weak: true});
 
