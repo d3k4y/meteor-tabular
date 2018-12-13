@@ -1,9 +1,9 @@
 /* global Package, Npm */
 
 Package.describe({
-  name: 'sebl29:tabular',
+  name: 'd3k4y:tabular',
   summary: 'Datatables for large or small datasets in Meteor',
-  version: '2.2.4',
+  version: '2.2.5',
   git: 'https://github.com/Sebl29/meteor-tabular.git'
 });
 
@@ -19,6 +19,7 @@ Package.onUse(function(api) {
     'ecmascript',
     'underscore',
     'mongo',
+    'peerlibrary:reactive-publish',
     'reactive-var',
     'tracker',
     'session'
@@ -48,7 +49,7 @@ Package.onUse(function(api) {
 
 Package.onTest(function(api) {
   // Tiny Test
-  api.use(['sebl29:tabular', 'tinytest']);
+  api.use(['d3k4y:tabular', 'tinytest']);
   api.use([
     'anti:fake',
     'check',
