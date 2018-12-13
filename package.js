@@ -19,7 +19,7 @@ Package.onUse(function(api) {
     'ecmascript',
     'underscore',
     'mongo',
-    'peerlibrary:reactive-publish',
+    'peerlibrary:reactive-publish@0.7.1',
     'reactive-var',
     'tracker',
     'session'
