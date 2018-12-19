@@ -25,7 +25,7 @@ Meteor.publish('tabular_genericPub', function (tableName, ids, fields) {
   check(ids, Array);
   check(fields, Match.Optional(Object));
 
-  this.autorun(() => {
+  // this.autorun(() => {
   const table = Tabular.tablesByName[tableName];
   if (!table) {
     // We throw an error in the other pub, so no need to throw one here
@@ -62,7 +62,7 @@ Meteor.publish('tabular_genericPub', function (tableName, ids, fields) {
   }
 
   return table.collection.find({_id: {$in: ids}}, {fields: fields});
-  });
+  // });
 });
 
 Meteor.publish('tabular_getInfo', function (tableName, selector, sort, skip, limit) {
@@ -72,7 +72,7 @@ Meteor.publish('tabular_getInfo', function (tableName, selector, sort, skip, lim
   check(skip, Number);
   check(limit, Match.Optional(Match.OneOf(Number, null)));
 
-  this.autorun(() => {
+  // this.autorun(() => {
   const table = Tabular.tablesByName[tableName];
   if (!table) {
     throw new Error(`No TabularTable defined with the name "${tableName}". Make sure you are defining your TabularTable in common code.`);
@@ -212,7 +212,7 @@ Meteor.publish('tabular_getInfo', function (tableName, selector, sort, skip, lim
     Meteor.clearInterval(interval);
     handle.stop();
   });
-  });
+  // });
 });
 
 export default Tabular;
