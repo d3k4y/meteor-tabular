@@ -72,7 +72,8 @@ Meteor.publish('tabular_getInfo', function (tableName, selector, sort, skip, lim
   check(skip, Number);
   check(limit, Match.Optional(Match.OneOf(Number, null)));
 
-  // this.autorun(() => {
+  this.autorun(() => {
+    // console.error('tabular_getInfo autorun', tableName);
   const table = Tabular.tablesByName[tableName];
   if (!table) {
     throw new Error(`No TabularTable defined with the name "${tableName}". Make sure you are defining your TabularTable in common code.`);
@@ -88,11 +89,13 @@ Meteor.publish('tabular_getInfo', function (tableName, selector, sort, skip, lim
     return;
   }
 
-  selector = selector || {};
+  let modifiedSelector = _.clone(selector || {});
 
   // Allow the user to modify the selector before we use it
   if (typeof table.changeSelector === 'function') {
-    selector = table.changeSelector(selector, this.userId);
+    // console.error('applying changeSelector: ' + JSON.stringify(modifiedSelector));
+      modifiedSelector = table.changeSelector(modifiedSelector, this.userId);
+      // console.error('applying changeSelector2: ' + JSON.stringify(modifiedSelector));
   }
 
   // Apply the server side selector specified in the tabular
@@ -123,7 +126,7 @@ Meteor.publish('tabular_getInfo', function (tableName, selector, sort, skip, lim
     findOptions.sort = sort;
   }
 
-  const filteredCursor = table.collection.find(selector, findOptions);
+  const filteredCursor = table.collection.find(modifiedSelector, findOptions);
 
   let filteredRecordIds = filteredCursor.map(doc => doc._id);
 
@@ -131,14 +134,15 @@ Meteor.publish('tabular_getInfo', function (tableName, selector, sort, skip, lim
   // the count to ensure the Next button is always available.
   const fakeCount = filteredRecordIds.length + skip + 1;
 
-  const countCursor = table.collection.find(selector, {fields: {_id: 1}});
+  const countCursor = table.collection.find(modifiedSelector, {fields: {_id: 1}});
 
   let recordReady = false;
   let updateRecords = () => {
+    // console.error('updateRecords called');
     let currentCount;
     if (!table.skipCount) {
       if (typeof table.alternativeCount === 'function') {
-        currentCount = table.alternativeCount(selector);
+        currentCount = table.alternativeCount(modifiedSelector);
       } else {
         currentCount = countCursor.count();
       }
@@ -158,10 +162,10 @@ Meteor.publish('tabular_getInfo', function (tableName, selector, sort, skip, lim
     };
 
     if (recordReady) {
-      //console.log('changed', tableName, record);
+      // console.log('changed', tableName, record);
       this.changed('tabular_records', tableName, record);
     } else {
-      //console.log('added', tableName, record);
+      // console.log('added', tableName, record);
       this.added('tabular_records', tableName, record);
       recordReady = true;
     }
@@ -181,16 +185,17 @@ Meteor.publish('tabular_getInfo', function (tableName, selector, sort, skip, lim
   const handle = filteredCursor.observeChanges({
     added: function (id) {
       if (initializing) return;
-      //console.log('ADDED');
+      // console.log('ADDED');
       filteredRecordIds.push(id);
       updateRecords();
     },
     changed: function (id) {
       if (initializing) return;
+        // console.log('CHANGED');
       updateRecords();
     },
     removed: function (id) {
-      //console.log('REMOVED');
+      // console.log('REMOVED');
       const approach1 = _.without(filteredRecordIds, id); // default approach, may fail if Mongo ObjectIDs are used
       const approach2 = _.without(filteredRecordIds, _.findWhere(filteredRecordIds, id)); // _.findWhere is used to support Mongo ObjectIDs
       filteredRecordIds = approach1.length < approach2.length ? approach1 : approach2;
@@ -203,16 +208,16 @@ Meteor.publish('tabular_getInfo', function (tableName, selector, sort, skip, lim
   // accurately when, for example, the selector is {} and there are a million documents.
   // Instead we will update the count every 10 seconds, in addition to whenever the limited
   // result set changes.
-  const interval = Meteor.setInterval(updateRecords, 10000);
+  // const interval = Meteor.setInterval(updateRecords, 10000);
 
   // Stop observing the cursors when client unsubs.
   // Stopping a subscription automatically takes
   // care of sending the client any removed messages.
   this.onStop(() => {
-    Meteor.clearInterval(interval);
+    // Meteor.clearInterval(interval);
     handle.stop();
   });
-  // });
+  });
 });
 
 export default Tabular;
