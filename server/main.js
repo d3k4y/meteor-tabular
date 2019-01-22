@@ -74,149 +74,149 @@ Meteor.publish('tabular_getInfo', function (tableName, selector, sort, skip, lim
 
   this.autorun(() => {
     // console.error('tabular_getInfo autorun', tableName);
-  const table = Tabular.tablesByName[tableName];
-  if (!table) {
-    throw new Error(`No TabularTable defined with the name "${tableName}". Make sure you are defining your TabularTable in common code.`);
-  }
-
-  // Check security. We call this in both publications.
-  // Even though we're only publishing _ids and counts
-  // from this function, with sensitive data, there is
-  // a chance someone could do a query and learn something
-  // just based on whether a result is found or not.
-  if (typeof table.allow === 'function' && !table.allow(this.userId)) {
-    this.ready();
-    return;
-  }
-
-  let modifiedSelector = _.clone(selector || {});
-
-  // Allow the user to modify the selector before we use it
-  if (typeof table.changeSelector === 'function') {
-    // console.error('applying changeSelector: ' + JSON.stringify(modifiedSelector));
-      modifiedSelector = table.changeSelector(modifiedSelector, this.userId);
-      // console.error('applying changeSelector2: ' + JSON.stringify(modifiedSelector));
-  }
-
-  // Apply the server side selector specified in the tabular
-  // table constructor. Both must be met, so we join
-  // them using $and, allowing both selectors to have
-  // the same keys.
-  if (table.selector) {
-      const tableSelector = typeof table.selector === 'function' ? table.selector(this.userId) : table.selector;
-      if (_.isEmpty(modifiedSelector)) {
-          modifiedSelector = tableSelector;
-      } else {
-          modifiedSelector = {$and: [tableSelector, modifiedSelector]};
-      }
-  }
-
-  const findOptions = {
-    skip: skip,
-    fields: {_id: 1}
-  };
-
-  // `limit` may be `null`
-  if (limit > 0) {
-    findOptions.limit = limit;
-  }
-
-  // `sort` may be `null`
-  if (_.isArray(sort)) {
-    findOptions.sort = sort;
-  }
-
-  const filteredCursor = table.collection.find(modifiedSelector, findOptions);
-
-  let filteredRecordIds = filteredCursor.map(doc => doc._id);
-
-  // If we are not going to count for real, in order to improve performance, then we will fake
-  // the count to ensure the Next button is always available.
-  const fakeCount = filteredRecordIds.length + skip + 1;
-
-  const countCursor = table.collection.find(modifiedSelector, {fields: {_id: 1}});
-
-  let recordReady = false;
-  let updateRecords = () => {
-    // console.error('updateRecords called');
-    let currentCount;
-    if (!table.skipCount) {
-      if (typeof table.alternativeCount === 'function') {
-        currentCount = table.alternativeCount(modifiedSelector);
-      } else {
-        currentCount = countCursor.count();
-      }
+    const table = Tabular.tablesByName[tableName];
+    if (!table) {
+      throw new Error(`No TabularTable defined with the name "${tableName}". Make sure you are defining your TabularTable in common code.`);
     }
 
-    // From https://datatables.net/manual/server-side
-    // recordsTotal: Total records, before filtering (i.e. the total number of records in the database)
-    // recordsFiltered: Total records, after filtering (i.e. the total number of records after filtering has been applied - not just the number of records being returned for this page of data).
+    // Check security. We call this in both publications.
+    // Even though we're only publishing _ids and counts
+    // from this function, with sensitive data, there is
+    // a chance someone could do a query and learn something
+    // just based on whether a result is found or not.
+    if (typeof table.allow === 'function' && !table.allow(this.userId)) {
+      this.ready();
+      return;
+    }
 
-    const record = {
-      ids: filteredRecordIds,
-      // count() will give us the updated total count
-      // every time. It does not take the find options
-      // limit into account.
-      recordsTotal: table.skipCount ? fakeCount : currentCount,
-      recordsFiltered: table.skipCount ? fakeCount : currentCount
+    let modifiedSelector = _.clone(selector || {});
+
+    // Allow the user to modify the selector before we use it
+    if (typeof table.changeSelector === 'function') {
+      // console.error('applying changeSelector: ' + JSON.stringify(modifiedSelector));
+        modifiedSelector = table.changeSelector(modifiedSelector, this.userId);
+        // console.error('applying changeSelector2: ' + JSON.stringify(modifiedSelector));
+    }
+
+    // Apply the server side selector specified in the tabular
+    // table constructor. Both must be met, so we join
+    // them using $and, allowing both selectors to have
+    // the same keys.
+    if (table.selector) {
+        const tableSelector = typeof table.selector === 'function' ? table.selector(this.userId) : table.selector;
+        if (_.isEmpty(modifiedSelector)) {
+            modifiedSelector = tableSelector;
+        } else {
+            modifiedSelector = {$and: [tableSelector, modifiedSelector]};
+        }
+    }
+
+    const findOptions = {
+      skip: skip,
+      fields: {_id: 1}
     };
 
-    if (recordReady) {
-      // console.log('changed', tableName, record);
-      this.changed('tabular_records', tableName, record);
-    } else {
-      // console.log('added', tableName, record);
-      this.added('tabular_records', tableName, record);
-      recordReady = true;
+    // `limit` may be `null`
+    if (limit > 0) {
+      findOptions.limit = limit;
     }
-  }
 
-  if (table.throttleRefresh) {
-    // Why Meteor.bindEnvironment? See https://github.com/aldeed/meteor-tabular/issues/278#issuecomment-217318112
-    updateRecords = _.throttle(Meteor.bindEnvironment(updateRecords), table.throttleRefresh);
-  }
-
-  updateRecords();
-
-  this.ready();
-
-  // Handle docs being added or removed from the result set.
-  let initializing = true;
-  const handle = filteredCursor.observeChanges({
-    added: function (id) {
-      if (initializing) return;
-      // console.log('ADDED');
-      filteredRecordIds.push(id);
-      updateRecords();
-    },
-    changed: function (id) {
-      if (initializing) return;
-        // console.log('CHANGED');
-      updateRecords();
-    },
-    removed: function (id) {
-      // console.log('REMOVED');
-      const approach1 = _.without(filteredRecordIds, id); // default approach, may fail if Mongo ObjectIDs are used
-      const approach2 = _.without(filteredRecordIds, _.findWhere(filteredRecordIds, id)); // _.findWhere is used to support Mongo ObjectIDs
-      filteredRecordIds = approach1.length < approach2.length ? approach1 : approach2;
-      updateRecords();
+    // `sort` may be `null`
+    if (_.isArray(sort)) {
+      findOptions.sort = sort;
     }
-  });
-  initializing = false;
 
-  // It is too inefficient to use an observe without any limits to track count perfectly
-  // accurately when, for example, the selector is {} and there are a million documents.
-  // Instead we will update the count every 10 seconds, in addition to whenever the limited
-  // result set changes.
-  // const interval = Meteor.setInterval(updateRecords, 10000);
+    const filteredCursor = table.collection.find(modifiedSelector, findOptions);
 
-  // Stop observing the cursors when client unsubs.
-  // Stopping a subscription automatically takes
-  // care of sending the client any removed messages.
-  this.onStop(() => {
-    // Meteor.clearInterval(interval);
-    handle.stop();
-  });
+    let filteredRecordIds = filteredCursor.map(doc => doc._id);
+
+    // If we are not going to count for real, in order to improve performance, then we will fake
+    // the count to ensure the Next button is always available.
+    const fakeCount = filteredRecordIds.length + skip + 1;
+
+    const countCursor = table.collection.find(modifiedSelector, {fields: {_id: 1}});
+
+    let recordReady = false;
+    let updateRecords = () => {
+      // console.error('updateRecords called');
+      let currentCount;
+      if (!table.skipCount) {
+        if (typeof table.alternativeCount === 'function') {
+          currentCount = table.alternativeCount(modifiedSelector);
+        } else {
+          currentCount = countCursor.count();
+        }
+      }
+
+      // From https://datatables.net/manual/server-side
+      // recordsTotal: Total records, before filtering (i.e. the total number of records in the database)
+      // recordsFiltered: Total records, after filtering (i.e. the total number of records after filtering has been applied - not just the number of records being returned for this page of data).
+
+      const record = {
+        ids: filteredRecordIds,
+        // count() will give us the updated total count
+        // every time. It does not take the find options
+        // limit into account.
+        recordsTotal: table.skipCount ? fakeCount : currentCount,
+        recordsFiltered: table.skipCount ? fakeCount : currentCount
+      };
+
+      if (recordReady) {
+        // console.log('changed', tableName, record);
+        this.changed('tabular_records', tableName, record);
+      } else {
+        // console.log('added', tableName, record);
+        this.added('tabular_records', tableName, record);
+        recordReady = true;
+      }
+    }
+
+    if (table.throttleRefresh) {
+      // Why Meteor.bindEnvironment? See https://github.com/aldeed/meteor-tabular/issues/278#issuecomment-217318112
+      updateRecords = _.throttle(Meteor.bindEnvironment(updateRecords), table.throttleRefresh);
+    }
+
+    updateRecords();
+
+    this.ready();
+
+    // Handle docs being added or removed from the result set.
+    let initializing = true;
+    const handle = filteredCursor.observeChanges({
+      added: function (id) {
+        if (initializing) return;
+        // console.log('ADDED');
+        filteredRecordIds.push(id);
+        updateRecords();
+      },
+      changed: function (id) {
+        if (initializing) return;
+          // console.log('CHANGED');
+        updateRecords();
+      },
+      removed: function (id) {
+        // console.log('REMOVED');
+        const approach1 = _.without(filteredRecordIds, id); // default approach, may fail if Mongo ObjectIDs are used
+        const approach2 = _.without(filteredRecordIds, _.findWhere(filteredRecordIds, id)); // _.findWhere is used to support Mongo ObjectIDs
+        filteredRecordIds = approach1.length < approach2.length ? approach1 : approach2;
+        updateRecords();
+      }
+    });
+    initializing = false;
+
+    // It is too inefficient to use an observe without any limits to track count perfectly
+    // accurately when, for example, the selector is {} and there are a million documents.
+    // Instead we will update the count every 10 seconds, in addition to whenever the limited
+    // result set changes.
+    // const interval = Meteor.setInterval(updateRecords, 10000);
+
+    // Stop observing the cursors when client unsubs.
+    // Stopping a subscription automatically takes
+    // care of sending the client any removed messages.
+    this.onStop(() => {
+      // Meteor.clearInterval(interval);
+      handle.stop();
+    });
   });
 });
 
