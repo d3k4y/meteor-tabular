@@ -102,13 +102,13 @@ Meteor.publish('tabular_getInfo', function (tableName, selector, sort, skip, lim
   // table constructor. Both must be met, so we join
   // them using $and, allowing both selectors to have
   // the same keys.
-  if (typeof table.selector === 'function') {
-    const tableSelector = table.selector(this.userId);
-    if (_.isEmpty(selector)) {
-      selector = tableSelector;
-    } else {
-      selector = {$and: [tableSelector, selector]};
-    }
+  if (table.selector) {
+      const tableSelector = typeof table.selector === 'function' ? table.selector(this.userId) : table.selector;
+      if (_.isEmpty(modifiedSelector)) {
+          modifiedSelector = tableSelector;
+      } else {
+          modifiedSelector = {$and: [tableSelector, modifiedSelector]};
+      }
   }
 
   const findOptions = {
