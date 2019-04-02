@@ -124,8 +124,6 @@ Template.tabular.onRendered(function () {
       // Matters on the first run only.
       template.tabular.ready.set(true);
 
-      //console.log('ajax');
-
       callback({
         draw: data.draw,
         recordsTotal: template.tabular.recordsTotal,
@@ -182,8 +180,6 @@ Template.tabular.onRendered(function () {
   var lastTableName;
   template.autorun(function () {
     var data = Template.currentData();
-
-    //console.log('currentData autorun', data);
     
     // if we don't have data OR the selector didn't actually change return out
     if (!data || (data.selector && template.tabular.selector === data.selector)) return;
@@ -279,8 +275,6 @@ Template.tabular.onRendered(function () {
   template.autorun(function () {
     if (!template.tabular.ready.get()) return;
 
-    //console.log('tabular_getInfo autorun');
-
     function onReady() {
       template.tabular.isLoading.set(false);
     }
@@ -310,8 +304,6 @@ Template.tabular.onRendered(function () {
     var tableName = template.tabular.tableName.get();
     var collection = template.tabular.collection.get();
     var tableInfo = Tabular.getRecord(tableName, collection) || {};
-
-    //console.log('tableName and tableInfo autorun', tableName, tableInfo);
 
     template.tabular.recordsTotal = tableInfo.recordsTotal || 0;
     template.tabular.recordsFiltered = tableInfo.recordsFiltered || 0;
@@ -346,8 +338,6 @@ Template.tabular.onRendered(function () {
   template.autorun(c => {
     const userOptions = template.tabular.options.get();
     const options = _.extend({}, ajaxOptions, userOptions);
-
-    //console.log('userOptions autorun', userOptions);
 
     // unless the user provides her own displayStart,
     // we use a value from Session. This keeps the
@@ -425,8 +415,6 @@ Template.tabular.onRendered(function () {
 
     // Get the updated list of docs we should be showing
     var cursor = collection.find({_id: {$in: tableInfo.ids}}, findOptions);
-
-    //console.log('tableInfo, fields, sort, find autorun', cursor.count());
 
     // We're subscribing to the docs just in time, so there's
     // a good chance that they aren't all sent to the client yet.

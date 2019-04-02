@@ -61,7 +61,8 @@ Meteor.publish('tabular_genericPub', function (tableName, ids, fields) {
     return;
   }
 
-  return table.collection.find({_id: {$in: ids}}, {fields: fields});
+  const tableSelector = typeof table.selector === 'function' ? table.selector(this.userId) : table.selector ? table.selector : {};
+  return table.collection.find({$and: [{_id: {$in: ids}}, tableSelector]}, {fields: fields});
   // });
 });
 
